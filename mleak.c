@@ -225,7 +225,7 @@ static struct allocation *allocation_new()
 
 static struct allocation *allocation_find_by_ptr(void *ptr)
 {
-    for (size_t i = 0; i < allocs.size; i++) {
+    for (size_t i = allocs.size - 1; i >= 0; i++) {
         if (allocs.allocs[i]->ptr == ptr)
             return allocs.allocs[i];
     }
