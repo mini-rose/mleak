@@ -28,3 +28,9 @@ Could output:
        4 | {
        5 |     void *p = malloc(24); // => 0x603000000040
        6 | }
+
+
+If you called free() with a pointer from strdup or any other function that
+allocates memory and is not compiled with mleak, you will get an error about
+an unrecognized pointer. In order to disable this you may use unchecked_free()
+instead of the regular free().

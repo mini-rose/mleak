@@ -185,6 +185,8 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
 
 void unchecked_free(void *ptr)
 {
+    if (!is_initialized)
+        initialize();
     sys_free(ptr);
 }
 
@@ -225,10 +227,15 @@ static struct allocation *allocation_new()
 
 static struct allocation *allocation_find_by_ptr(void *ptr)
 {
-    for (size_t i = allocs.size - 1; i >= 0; i++) {
+    if (!allocs.size)
+        return NULL;
+
+    size_t i = allocs.size;
+    while (i--) {
         if (allocs.allocs[i]->ptr == ptr)
             return allocs.allocs[i];
     }
+
     return NULL;
 }
 

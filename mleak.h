@@ -5,14 +5,10 @@
  *
  * Copyright (c) 2022 mini-rose
  */
-#if !defined(MLEAK_H) && !defined(NO_MLEAK)
+#if !defined MLEAK_H && !defined NO_MLEAK
 #define MLEAK_H
 
 #include <stddef.h>
-
-#if !defined(__GNUC__) && !defined(__clang__) && !defined(__chibicc__)
-# error "unsupported compiler, remove this check if you know what you're doing"
-#endif
 
 #if defined(__GNUC__)
 # define MLEAK_FUNC     __PRETTY_FUNCTION__
