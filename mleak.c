@@ -15,11 +15,13 @@ typedef void (*free_ft) (void *);
 typedef void *(*malloc_ft) (size_t);
 typedef void *(*calloc_ft) (size_t, size_t);
 typedef void *(*realloc_ft) (void *, size_t);
+typedef char *(*strdup_ft) (const char *);
 
 #define ALLOC_FREE      1
 #define ALLOC_MALLOC    2
 #define ALLOC_CALLOC    3
 #define ALLOC_REALLOC   4
+#define ALLOC_STRDUP    5
 
 #define LINESIZE        256
 
@@ -52,6 +54,7 @@ static free_ft sys_free = NULL;
 static malloc_ft sys_malloc = NULL;
 static calloc_ft sys_calloc = NULL;
 static realloc_ft sys_realloc = NULL;
+static strdup_ft sys_strdup = NULL;
 
 /* All strings are stored in this single array. This contains all file and
    function names that are stored when allocating something. */
@@ -183,6 +186,27 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
     return new_ptr;
 }
 
+char *_mleak_strdup(const char *str, char *file, int line, const char *func)
+{
+    struct allocation *alloc;
+    char *new_str;
+
+    if (!is_initialized)
+        initialize();
+
+    new_str = sys_strdup(str);
+
+    alloc = allocation_new();
+    alloc->ptr = new_str;
+    alloc->size = strlen(new_str) + 1;
+    alloc->line = line;
+    alloc->func = strings_add(func);
+    alloc->file = strings_add(file);
+    alloc->type = ALLOC_STRDUP;
+
+    return new_str;
+}
+
 void unchecked_free(void *ptr)
 {
     if (!is_initialized)
@@ -208,7 +232,7 @@ static char *strings_add(const char *str)
                 * sizeof(char *));
     }
 
-    strings.strings[strings.size] = strdup(str);
+    strings.strings[strings.size] = sys_strdup(str);
     return strings.strings[strings.size++];
 }
 
@@ -287,8 +311,10 @@ static void initialize()
     sys_malloc  = dlsym(NULL, "malloc");
     sys_calloc  = dlsym(NULL, "calloc");
     sys_realloc = dlsym(NULL, "realloc");
+    sys_strdup  = dlsym(NULL, "strdup");
 
-    if (!sys_free || !sys_malloc || !sys_calloc || !sys_realloc) {
+    if (!sys_free || !sys_malloc || !sys_calloc || !sys_realloc
+        || !sys_strdup) {
         fprintf(stderr, "mleak: %s\n", dlerror());
         _mleak_exit;
     }

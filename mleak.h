@@ -28,6 +28,8 @@
         MLEAK_FUNC)
 #define realloc(PTR, SIZE)  _mleak_realloc(PTR, SIZE, __FILE__, __LINE__, \
         MLEAK_FUNC)
+#define strdup(STR)         _mleak_strdup(STR, __FILE__, __LINE__, MLEAK_FUNC)
+
 
 void _mleak_free(void *ptr, char *file, int line, const char *func);
 void *_mleak_malloc(size_t size, char *file, int line, const char *func);
@@ -35,10 +37,11 @@ void *_mleak_calloc(size_t size, size_t elems, char *file, int line,
         const char *func);
 void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
         const char *func);
+char *_mleak_strdup(const char *str, char *file, int line, const char *func);
 
-/* Free a value that has not been registered by mleak. This, for example, could
-   be string allocated by strdup(). Note that because this is an unchecked free,
-   passing a registered pointer will result in a "memory leak" message. */
+/* Free a value that has not been registered by mleak. Note that because this
+   is an unchecked free, passing a registered pointer will result in a "memory
+   leak" message. */
 void unchecked_free(void *ptr);
 
 
