@@ -1,8 +1,8 @@
 mleak
 -----
 
-Minimal library for catching memory leaks, double-frees, invalid pointers passed
-to free & realloc, counting allocations and used heap memory.
+Library for catching memory leaks, double-frees, invalid pointers passed to free
+& realloc, counting allocations and used heap memory.
 
 If you're profiling allocations, you may use `-DMLEAK_TRACK` to print the amount
 of calls to the allocation functions, and the amount of total bytes allocated.
