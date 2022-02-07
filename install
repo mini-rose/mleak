@@ -1,0 +1,10 @@
+#!/bin/sh
+
+CC=clang
+[ -z "$(type $CC 2> /dev/null)" ] && CC=c99
+$CC -c -fPIE -o mleak.o mleak.c
+ar -rcs libmleak.a mleak.o
+rm mleak.o
+
+mv libmleak.a /usr/lib
+cp mleak.h /usr/include

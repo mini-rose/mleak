@@ -1,23 +1,27 @@
 mleak
 -----
 
-Single header + source library for catching memory leaks, double-frees along
-with invalid pointers passed to free & realloc. In order to use this library
-you have to compile with -ldl for the dlsym() function.
-
-If you want to disable the library, just define NO_MLEAK with `-DNO_MLEAK=1`.
-When something goes wrong mleak will call `exit(1)` to exit the program. To
-overwrite this define the _mleak_exit macro.
+Minimal library for catching memory leaks, double-frees, invalid pointers passed
+to free & realloc, counting allocations and used heap memory.
 
 If you're profiling allocations, you may use `-DMLEAK_TRACK` to print the amount
 of calls to the allocation functions, and the amount of total bytes allocated.
 Note that realloc() called with NULL gets redirected to a malloc().
 
 
+Usage
+-----
+
+Install the library by running ./install as root, and then include the <mleak.h>
+header in your source code. Then add the following line to your buildfile:
+
+    libs mleak
+
+
 Example
 -------
 
-    #include "mleak.h"
+    #include <mleak.h>
 
     int main()
     {

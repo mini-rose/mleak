@@ -16,12 +16,6 @@
 # define MLEAK_FUNC     __func__
 #endif
 
-#ifndef _mleak_exit
-/* Usually, if some error occurs in the mleak library it calls exit(1). You may
-   change this by defining _mleak_exit to be anything you want. */
-# define _mleak_exit exit(1)
-#endif
-
 #define free(PTR)           _mleak_free(PTR, __FILE__, __LINE__)
 #define malloc(SIZE)        _mleak_malloc(SIZE, __FILE__, __LINE__, MLEAK_FUNC)
 #define calloc(SIZE, N)     _mleak_calloc(SIZE, N, __FILE__, __LINE__, \
