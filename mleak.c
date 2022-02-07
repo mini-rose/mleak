@@ -28,7 +28,7 @@ typedef char *(*strdup_ft) (const char *);
 struct allocation
 {
     void *ptr;
-    int size;
+    size_t size;
     int type;
     int line;
     char *func;
@@ -47,6 +47,12 @@ struct allocation_list
     struct allocation **allocs;
     size_t size;
     size_t space;
+    size_t total;
+    size_t frees;
+    size_t reallocs;
+    size_t mallocs;
+    size_t callocs;
+    size_t strdups;
 };
 
 static bool is_initialized = false;
@@ -107,6 +113,8 @@ void _mleak_free(void *ptr, char *file, int line)
     alloc->file = strings_add(alloc->file);
     alloc->type = ALLOC_FREE;
     sys_free(ptr);
+
+    allocs.frees++;
 }
 
 void *_mleak_malloc(size_t size, char *file, int line, const char *func)
@@ -124,6 +132,8 @@ void *_mleak_malloc(size_t size, char *file, int line, const char *func)
     alloc->file = strings_add(file);
     alloc->type = ALLOC_MALLOC;
 
+    allocs.total += size;
+    allocs.mallocs++;
     return ptr;
 }
 
@@ -143,6 +153,8 @@ void *_mleak_calloc(size_t size, size_t elems, char *file, int line,
     alloc->file = strings_add(file);
     alloc->type = ALLOC_CALLOC;
 
+    allocs.total += size;
+    allocs.callocs++;
     return ptr;
 }
 
@@ -167,9 +179,13 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
     }
 
     new_ptr = sys_realloc(ptr, size);
+
     if (new_ptr == ptr) {
         /* If realloc() returns the same pointer as the old one, only the size
            is changed so we can just update the previous allocation. */
+        if (size > previous_alloc->size)
+            allocs.total += size - previous_alloc->size;
+
         previous_alloc->size = size;
         previous_alloc->line = line;
         previous_alloc->func = strings_add(func);
@@ -190,6 +206,8 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
     alloc->file = strings_add(file);
     alloc->type = ALLOC_REALLOC;
 
+    allocs.reallocs++;
+    allocs.total += size;
     return new_ptr;
 }
 
@@ -197,20 +215,24 @@ char *_mleak_strdup(const char *str, char *file, int line, const char *func)
 {
     struct allocation *alloc;
     char *new_str;
+    size_t size;
 
     if (!is_initialized)
         initialize();
 
     new_str = sys_strdup(str);
+    size = strlen(new_str) + 1;
 
     alloc = allocation_new();
     alloc->ptr = new_str;
-    alloc->size = strlen(new_str) + 1;
+    alloc->size = size;
     alloc->line = line;
     alloc->func = strings_add(func);
     alloc->file = strings_add(file);
     alloc->type = ALLOC_STRDUP;
 
+    allocs.total += size;
+    allocs.strdups++;
     return new_str;
 }
 
@@ -274,9 +296,8 @@ static struct allocation *allocation_find_by_ptr(void *ptr)
    allocation struct. */
 static void notify_about_leak(struct allocation *alloc)
 {
-    fprintf(stderr, "\033[91mMemory leaked, \033[1;91m%d bytes\033[0m allocated"
-            " in \033[1;97m%s:\033[0m\n",
-            alloc->size, alloc->func);
+    fprintf(stderr, "\033[91mMemory leaked, \033[1;91m%zu bytes\033[0m "
+            "allocated in \033[1;97m%s:\033[0m\n", alloc->size, alloc->func);
 
     print_source_code(alloc->file, alloc->line, alloc->ptr);
 }
@@ -344,6 +365,14 @@ static void deconstruct()
         sys_free(strings.strings[i]);
     sys_free(strings.strings);
 
+#ifdef MLEAK_TRACK
+    fprintf(stderr, "mleak: mallocs=\033[92m%zu\033[0m callocs=\033[92m%zu\033"
+            "[0m reallocs=\033[93m%zu\033[0m strdups=\033[92m%zu\033[0m frees="
+            "\033[95m%zu\033[0m\n", allocs.mallocs, allocs.callocs,
+            allocs.reallocs, allocs.strdups, allocs.frees);
+    fprintf(stderr, "mleak: total allocated \033[96m%zu\033[0m bytes\n",
+            allocs.total);
+#endif
 }
 
 #endif /* !NO_MLEAK */

@@ -9,6 +9,10 @@ If you want to disable the library, just define NO_MLEAK with `-DNO_MLEAK=1`.
 When something goes wrong mleak will call `exit(1)` to exit the program. To
 overwrite this define the _mleak_exit macro.
 
+If you're profiling allocations, you may use `-DMLEAK_TRACK` to print the amount
+of calls to the allocation functions, and the amount of total bytes allocated.
+Note that realloc() called with NULL gets redirected to a malloc().
+
 
 Example
 -------
