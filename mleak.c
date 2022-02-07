@@ -73,7 +73,7 @@ static void initialize();
 static void deconstruct();
 
 
-void _mleak_free(void *ptr, char *file, int line, const char *func)
+void _mleak_free(void *ptr, char *file, int line)
 {
     struct allocation *alloc;
 
@@ -95,9 +95,16 @@ void _mleak_free(void *ptr, char *file, int line, const char *func)
         fprintf(stderr, "\033[91mfree() called with already free'd pointer:"
                 "\033[0m\n");
         print_source_code(file, line, ptr);
+
+        fprintf(stderr, "Previously free'd here:\n");
+        print_source_code(alloc->file, alloc->line, alloc->ptr);
+
         _mleak_exit;
     }
 
+    alloc->line = line;
+    alloc->func = strings_add(alloc->func);
+    alloc->file = strings_add(alloc->file);
     alloc->type = ALLOC_FREE;
     sys_free(ptr);
 }
@@ -268,8 +275,8 @@ static struct allocation *allocation_find_by_ptr(void *ptr)
 static void notify_about_leak(struct allocation *alloc)
 {
     fprintf(stderr, "\033[91mMemory leaked, \033[1;91m%d bytes\033[0m allocated"
-            " in \033[1;97m%s:\033[0m\n%s\n",
-            alloc->size, alloc->func, alloc->file);
+            " in \033[1;97m%s:\033[0m\n",
+            alloc->size, alloc->func);
 
     print_source_code(alloc->file, alloc->line, alloc->ptr);
 }
@@ -290,7 +297,7 @@ static void print_source_code(char *file, int linenum, void *ptr)
         fgets(line, LINESIZE, f);
 
     fgets(line, LINESIZE, f);
-    fprintf(stderr, "%4d | %s", linenum - 1, line);
+    fprintf(stderr, "%s\n%4d | %s", file, linenum - 1, line);
 
     fgets(line, LINESIZE, f);
     line[strlen(line) - 1] = 0;

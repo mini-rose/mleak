@@ -22,7 +22,7 @@
 # define _mleak_exit exit(1)
 #endif
 
-#define free(PTR)           _mleak_free(PTR, __FILE__, __LINE__, MLEAK_FUNC)
+#define free(PTR)           _mleak_free(PTR, __FILE__, __LINE__)
 #define malloc(SIZE)        _mleak_malloc(SIZE, __FILE__, __LINE__, MLEAK_FUNC)
 #define calloc(SIZE, N)     _mleak_calloc(SIZE, N, __FILE__, __LINE__, \
         MLEAK_FUNC)
@@ -31,7 +31,7 @@
 #define strdup(STR)         _mleak_strdup(STR, __FILE__, __LINE__, MLEAK_FUNC)
 
 
-void _mleak_free(void *ptr, char *file, int line, const char *func);
+void _mleak_free(void *ptr, char *file, int line);
 void *_mleak_malloc(size_t size, char *file, int line, const char *func);
 void *_mleak_calloc(size_t size, size_t elems, char *file, int line,
         const char *func);
