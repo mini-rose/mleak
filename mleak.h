@@ -2,15 +2,10 @@
  * mleak - library for catching memory leaks, double-frees, invalid pointers
  * passed to free & realloc, couting allocations and used heap memory.
  *
- * If you're profiling allocations, you may want to use `-DMLEAK_TRACK` to print
- * the amount of calls to the allocation function, and the total amount of bytes
- * allocated.
- *
  * Copyright (c) 2022 mini-rose
  */
 #ifndef MLEAK_H
 #define MLEAK_H
-#ifndef NO_MLEAK
 
 #include <features.h>
 #include <stddef.h>
@@ -19,41 +14,66 @@
 /* If we're compiling under GNU GCC or Clang, we can use the __PRETTY_FUNCTION__
    macro to get some nice names in the errors. This also may help with C++ for
    overloaded functions. */
-# define __mleak_func   __PRETTY_FUNCTION__
+# define MLEAK_FUNC   __PRETTY_FUNCTION__
 #else
-# define __mleak_func   __func__
+# define MLEAK_FUNC   __func__
 #endif
 
-void _mleak_free(void *ptr, char *file, int line);
-void *_mleak_malloc(size_t size, char *file, int line, const char *func);
-void *_mleak_calloc(size_t size, size_t elems, char *file, int line,
+void mleak_free(void *ptr, char *file, int line);
+void *mleak_malloc(size_t size, char *file, int line, const char *func);
+void *mleak_calloc(size_t size, size_t elems, char *file, int line,
+        const char *func);
+void *mleak_realloc(void *ptr, size_t size, char *file, int line,
         const char *func);
 
 #if _XOPEN_SOURCE >= 500
 /* Duplicate a string */
-char *_mleak_strdup(const char *str, char *file, int line, const char *func);
+char *mleak_strdup(const char *str, char *file, int line, const char *func);
 #endif
-
-/* If `ptr` is NULL, this call will be redirected and registered as a malloc,
-   not a realloc. Keep that in mind when calculating calls with MLEAK_TRACK. */
-void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
-        const char *func);
 
 /* Free a value that has not been registered by mleak. Note that because this
    is an unchecked free, passing a registered pointer will result in a "memory
    leak" message. */
-void unchecked_free(void *ptr);
+void mleak_unchecked_free(void *ptr);
 
+/* Store current mleak statistics. You may retrieve all this information from
+   the library using mleak_getstat(). This can be used to profile to memory
+   allocations and used up heap memory.
 
-#define free(PTR) _mleak_free(PTR, __FILE__, __LINE__)
-#define malloc(SIZE) _mleak_malloc(SIZE, __FILE__, __LINE__, __mleak_func)
-#define calloc(SIZE, N) _mleak_calloc(SIZE, N, __FILE__, __LINE__, __mleak_func)
-#define realloc(PTR, SIZE) _mleak_realloc(PTR, SIZE, __FILE__, __LINE__, \
-        __mleak_func)
+   Note that when calculating realloc() calls, when called with a NULL pointer
+   as the first argument, a realloc() call gets moved and registered as a call
+   to malloc(). */
+struct mleak_stat
+{
+    size_t ml_total;
+    size_t ml_frees;
+    size_t ml_mallocs;
+    size_t ml_callocs;
+    size_t ml_reallocs;
+    size_t ml_strdups;
+};
+
+/* Get the current statistics from the library. This will copy the data into
+   the passed structure, so you may read and write to it with no problem. */
+void mleak_getstat(struct mleak_stat *mlstat);
+
+/* Print the passed mleak_stat to stdout in 2 lines: the total allocated bytes
+   and the amount of calls. */
+void mleak_printstat(struct mleak_stat *mlstat);
+
+#ifndef MLEAK_NO_MACROS
+/* If MLEAK_NO_MACROS is not defined, the standard library factories will not
+   get overwritten. */
+#define free(PTR) mleak_free(PTR, __FILE__, __LINE__)
+#define malloc(SIZE) mleak_malloc(SIZE, __FILE__, __LINE__, MLEAK_FUNC)
+#define calloc(SIZE, N) mleak_calloc(SIZE, N, __FILE__, __LINE__, MLEAK_FUNC)
+#define realloc(PTR, SIZE) mleak_realloc(PTR, SIZE, __FILE__, __LINE__, \
+        MLEAK_FUNC)
+#define unchecked_free(PTR) mleak_unchecked_free(PTR)
 
 #if _XOPEN_SOURCE >= 500
-# define strdup(STR) _mleak_strdup(STR, __FILE__, __LINE__, MLEAK_FUNC)
+# define strdup(STR) mleak_strdup(STR, __FILE__, __LINE__, MLEAK_FUNC)
 #endif
+#endif /* !MLEAK_NO_MACROS */
 
-#endif /* !NO_MLEAK */
 #endif /* !MLEAK_H */

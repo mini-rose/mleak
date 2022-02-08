@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include "mleak.h"
 
-#ifndef NO_MLEAK
-
 typedef void (*free_ft) (void *);
 typedef void *(*malloc_ft) (size_t);
 typedef void *(*calloc_ft) (size_t, size_t);
@@ -45,14 +43,9 @@ struct slist
 struct allocation_list
 {
     struct allocation **allocs;
+    struct mleak_stat mlstat;
     size_t size;
     size_t space;
-    size_t total;
-    size_t frees;
-    size_t reallocs;
-    size_t mallocs;
-    size_t callocs;
-    size_t strdups;
 };
 
 static bool is_initialized = false;
@@ -79,7 +72,7 @@ static void initialize();
 static void deconstruct();
 
 
-void _mleak_free(void *ptr, char *file, int line)
+void mleak_free(void *ptr, char *file, int line)
 {
     struct allocation *alloc;
 
@@ -114,10 +107,10 @@ void _mleak_free(void *ptr, char *file, int line)
     alloc->type = ALLOC_FREE;
     sys_free(ptr);
 
-    allocs.frees++;
+    allocs.mlstat.ml_frees++;
 }
 
-void *_mleak_malloc(size_t size, char *file, int line, const char *func)
+void *mleak_malloc(size_t size, char *file, int line, const char *func)
 {
     if (!is_initialized)
         initialize();
@@ -132,12 +125,12 @@ void *_mleak_malloc(size_t size, char *file, int line, const char *func)
     alloc->file = strings_add(file);
     alloc->type = ALLOC_MALLOC;
 
-    allocs.total += size;
-    allocs.mallocs++;
+    allocs.mlstat.ml_total += size;
+    allocs.mlstat.ml_mallocs++;
     return ptr;
 }
 
-void *_mleak_calloc(size_t size, size_t elems, char *file, int line,
+void *mleak_calloc(size_t size, size_t elems, char *file, int line,
         const char *func)
 {
     if (!is_initialized)
@@ -153,12 +146,12 @@ void *_mleak_calloc(size_t size, size_t elems, char *file, int line,
     alloc->file = strings_add(file);
     alloc->type = ALLOC_CALLOC;
 
-    allocs.total += size;
-    allocs.callocs++;
+    allocs.mlstat.ml_total += size;
+    allocs.mlstat.ml_callocs++;
     return ptr;
 }
 
-void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
+void *mleak_realloc(void *ptr, size_t size, char *file, int line,
         const char *func)
 {
     struct allocation *alloc, *previous_alloc;
@@ -168,7 +161,7 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
         initialize();
 
     if (!ptr)
-        return _mleak_malloc(size, file, line, func);
+        return mleak_malloc(size, file, line, func);
 
     previous_alloc = allocation_find_by_ptr(ptr);
     if (!previous_alloc) {
@@ -184,7 +177,7 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
         /* If realloc() returns the same pointer as the old one, only the size
            is changed so we can just update the previous allocation. */
         if (size > previous_alloc->size)
-            allocs.total += size - previous_alloc->size;
+            allocs.mlstat.ml_total += size - previous_alloc->size;
 
         previous_alloc->size = size;
         previous_alloc->line = line;
@@ -206,12 +199,12 @@ void *_mleak_realloc(void *ptr, size_t size, char *file, int line,
     alloc->file = strings_add(file);
     alloc->type = ALLOC_REALLOC;
 
-    allocs.reallocs++;
-    allocs.total += size;
+    allocs.mlstat.ml_reallocs++;
+    allocs.mlstat.ml_total += size;
     return new_ptr;
 }
 
-char *_mleak_strdup(const char *str, char *file, int line, const char *func)
+char *mleak_strdup(const char *str, char *file, int line, const char *func)
 {
     struct allocation *alloc;
     char *new_str;
@@ -231,16 +224,29 @@ char *_mleak_strdup(const char *str, char *file, int line, const char *func)
     alloc->file = strings_add(file);
     alloc->type = ALLOC_STRDUP;
 
-    allocs.total += size;
-    allocs.strdups++;
+    allocs.mlstat.ml_total += size;
+    allocs.mlstat.ml_strdups++;
     return new_str;
 }
 
-void unchecked_free(void *ptr)
+void mleak_unchecked_free(void *ptr)
 {
     if (!is_initialized)
         initialize();
     sys_free(ptr);
+}
+
+void mleak_getstat(struct mleak_stat *mlstat)
+{
+    memcpy(mlstat, &allocs.mlstat, sizeof(*mlstat));
+}
+
+void mleak_printstat(struct mleak_stat *mlstat)
+{
+    printf("mleak: allocated %zu bytes\n", mlstat->ml_total);
+    printf("mleak: mallocs=%zu callocs=%zu reallocs=%zu frees=%zu strdups=%zu"
+            "\n", mlstat->ml_mallocs, mlstat->ml_callocs, mlstat->ml_reallocs,
+            mlstat->ml_frees, mlstat->ml_strdups);
 }
 
 /* Private functions */
@@ -364,15 +370,4 @@ static void deconstruct()
     for (size_t i = 0; i < strings.size; i++)
         sys_free(strings.strings[i]);
     sys_free(strings.strings);
-
-#ifdef MLEAK_TRACK
-    fprintf(stderr, "mleak: mallocs=\033[92m%zu\033[0m callocs=\033[92m%zu\033"
-            "[0m reallocs=\033[93m%zu\033[0m strdups=\033[92m%zu\033[0m frees="
-            "\033[95m%zu\033[0m\n", allocs.mallocs, allocs.callocs,
-            allocs.reallocs, allocs.strdups, allocs.frees);
-    fprintf(stderr, "mleak: total allocated \033[96m%zu\033[0m bytes\n",
-            allocs.total);
-#endif
 }
-
-#endif /* !NO_MLEAK */

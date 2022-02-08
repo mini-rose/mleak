@@ -2,18 +2,9 @@ mleak
 -----
 
 Library for catching memory leaks, double-frees, invalid pointers passed to free
-& realloc, counting allocations and used heap memory.
-
-If you're profiling allocations, you may use `-DMLEAK_TRACK` to print the amount
-of calls to the allocation functions, and the amount of total bytes allocated.
-Note that realloc() called with NULL gets redirected to a malloc().
-
-
-Usage
------
-
-Install the library by running ./install as root, and then include the <mleak.h>
-header in your source code. Then add the following line to your buildfile:
+& realloc, counting allocations and used heap memory. Install the library by
+running ./install as root, and then include the <mleak.h> header in your source
+code. Then add the following line to your buildfile:
 
     libs mleak
 
