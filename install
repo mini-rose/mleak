@@ -6,5 +6,5 @@ $CC -c -fPIE -o mleak.o mleak.c
 ar -rcs libmleak.a mleak.o
 rm mleak.o
 
-mv libmleak.a /usr/lib
-cp mleak.h /usr/include
+mv -f libmleak.a /usr/lib
+cp -f mleak.h /usr/include
