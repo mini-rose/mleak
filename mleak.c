@@ -2,6 +2,7 @@
  * mleak.c - mleak implementation
  * Copyright (c) 2022 mini-rose
  */
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,10 +59,12 @@ static strdup_ft sys_strdup = NULL;
 /* All strings are stored in this single array. This contains all file and
    function names that are stored when allocating something. */
 static struct slist strings = {0};
+static pthread_mutex_t mut_strings = PTHREAD_MUTEX_INITIALIZER;
 
 /* List of all allocations. This is verified after the program exits, meaning
    when deconstruct() gets called. */
 static struct allocation_list allocs = {0};
+static pthread_mutex_t mut_allocs = PTHREAD_MUTEX_INITIALIZER;
 
 static char *strings_add(const char *str);
 static struct allocation *allocation_new();
@@ -254,11 +257,15 @@ void mleak_printstat(struct mleak_stat *mlstat)
 /* Add a new string into the strings list. Returns a pointer to string. */
 static char *strings_add(const char *str)
 {
+    pthread_mutex_lock(&mut_strings);
+
     /* If the string already exists in the string list, return a pointer to the
        already allocated string. */
     for (size_t i = 0; i < strings.size; i++) {
-        if (!strcmp(strings.strings[i], str))
+        if (!strcmp(strings.strings[i], str)) {
+            pthread_mutex_unlock(&mut_strings);
             return strings.strings[i];
+        }
     }
 
     if (strings.size >= strings.space) {
@@ -267,21 +274,26 @@ static char *strings_add(const char *str)
                 * sizeof(char *));
     }
 
-    strings.strings[strings.size] = sys_strdup(str);
-    return strings.strings[strings.size++];
+    strings.strings[strings.size++] = sys_strdup(str);
+
+    pthread_mutex_unlock(&mut_strings);
+    return strings.strings[strings.size - 1];
 }
 
 /* Create a new allocation slot. */
 static struct allocation *allocation_new()
 {
+    pthread_mutex_lock(&mut_allocs);
+
     if (allocs.size >= allocs.space) {
         allocs.space += 64;
         allocs.allocs = sys_realloc(allocs.allocs, allocs.space
                 * sizeof(struct allocation *));
     }
 
-    allocs.allocs[allocs.size] = sys_calloc(sizeof(struct allocation), 1);
-    return allocs.allocs[allocs.size++];
+    allocs.allocs[allocs.size++] = sys_calloc(sizeof(struct allocation), 1);
+    pthread_mutex_unlock(&mut_allocs);
+    return allocs.allocs[allocs.size - 1];
 }
 
 static struct allocation *allocation_find_by_ptr(void *ptr)
