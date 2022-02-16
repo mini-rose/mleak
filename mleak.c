@@ -326,10 +326,8 @@ static void print_source_code(char *file, int linenum, void *ptr)
     char line[LINESIZE];
     FILE *f;
 
-    if (!(f = fopen(file, "r"))) {
-        fprintf(stderr, "\n<could not fetch source '%s'>\n", file);
+    if (!(f = fopen(file, "r")))
         return;
-    }
 
     /* Fetch until the start line. */
     for (int i = 0; i < linenum - 2; i++)
