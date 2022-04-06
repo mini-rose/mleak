@@ -26,27 +26,27 @@ typedef char *(*strdup_ft) (const char *);
 
 struct allocation
 {
-    void *ptr;
-    size_t size;
-    int type;
-    int line;
-    char *func;
-    char *file;
+	void *ptr;
+	size_t size;
+	int type;
+	int line;
+	char *func;
+	char *file;
 };
 
 struct slist
 {
-    char **strings;
-    size_t size;
-    size_t space;
+	char **strings;
+	size_t size;
+	size_t space;
 };
 
 struct allocation_list
 {
-    struct allocation **allocs;
-    struct mleak_stat mlstat;
-    size_t size;
-    size_t space;
+	struct allocation **allocs;
+	struct mleak_stat mlstat;
+	size_t size;
+	size_t space;
 };
 
 static bool is_initialized = false;
@@ -77,179 +77,179 @@ static void deconstruct();
 
 void mleak_free(void *ptr, char *file, int line)
 {
-    struct allocation *alloc;
+	struct allocation *alloc;
 
-    if (!is_initialized)
-        initialize();
+	if (!is_initialized)
+		initialize();
 
-    if (!ptr)
-        return;
+	if (!ptr)
+		return;
 
-    alloc = allocation_find_by_ptr(ptr);
-    if (!alloc) {
-        fprintf(stderr, "\033[91mfree() called with unregistered pointer:"
-                "\033[0m\n");
-        print_source_code(file, line, ptr);
-        exit(1);
-    }
+	alloc = allocation_find_by_ptr(ptr);
+	if (!alloc) {
+		fprintf(stderr, "\033[91mfree() called with unregistered pointer:"
+				"\033[0m\n");
+		print_source_code(file, line, ptr);
+		exit(1);
+	}
 
-    if (alloc->type == ALLOC_FREE) {
-        fprintf(stderr, "\033[91mfree() called with already free'd pointer:"
-                "\033[0m\n");
-        print_source_code(file, line, ptr);
+	if (alloc->type == ALLOC_FREE) {
+		fprintf(stderr, "\033[91mfree() called with already free'd pointer:"
+				"\033[0m\n");
+		print_source_code(file, line, ptr);
 
-        fprintf(stderr, "Previously free'd here:\n");
-        print_source_code(alloc->file, alloc->line, alloc->ptr);
+		fprintf(stderr, "Previously free'd here:\n");
+		print_source_code(alloc->file, alloc->line, alloc->ptr);
 
-        exit(1);
-    }
+		exit(1);
+	}
 
-    alloc->line = line;
-    alloc->func = strings_add(alloc->func);
-    alloc->file = strings_add(alloc->file);
-    alloc->type = ALLOC_FREE;
-    sys_free(ptr);
+	alloc->line = line;
+	alloc->func = strings_add(alloc->func);
+	alloc->file = strings_add(alloc->file);
+	alloc->type = ALLOC_FREE;
+	sys_free(ptr);
 
-    allocs.mlstat.ml_frees++;
+	allocs.mlstat.ml_frees++;
 }
 
 void *mleak_malloc(size_t size, char *file, int line, const char *func)
 {
-    if (!is_initialized)
-        initialize();
+	if (!is_initialized)
+		initialize();
 
-    void *ptr = sys_malloc(size);
+	void *ptr = sys_malloc(size);
 
-    struct allocation *alloc = allocation_new();
-    alloc->ptr = ptr;
-    alloc->size = size;
-    alloc->line = line;
-    alloc->func = strings_add(func);
-    alloc->file = strings_add(file);
-    alloc->type = ALLOC_MALLOC;
+	struct allocation *alloc = allocation_new();
+	alloc->ptr = ptr;
+	alloc->size = size;
+	alloc->line = line;
+	alloc->func = strings_add(func);
+	alloc->file = strings_add(file);
+	alloc->type = ALLOC_MALLOC;
 
-    allocs.mlstat.ml_total += size;
-    allocs.mlstat.ml_mallocs++;
-    return ptr;
+	allocs.mlstat.ml_total += size;
+	allocs.mlstat.ml_mallocs++;
+	return ptr;
 }
 
 void *mleak_calloc(size_t size, size_t elems, char *file, int line,
-        const char *func)
+		const char *func)
 {
-    if (!is_initialized)
-        initialize();
+	if (!is_initialized)
+		initialize();
 
-    void *ptr = sys_calloc(size, elems);
+	void *ptr = sys_calloc(size, elems);
 
-    struct allocation *alloc = allocation_new();
-    alloc->ptr = ptr;
-    alloc->size = size * elems;
-    alloc->line = line;
-    alloc->func = strings_add(func);
-    alloc->file = strings_add(file);
-    alloc->type = ALLOC_CALLOC;
+	struct allocation *alloc = allocation_new();
+	alloc->ptr = ptr;
+	alloc->size = size * elems;
+	alloc->line = line;
+	alloc->func = strings_add(func);
+	alloc->file = strings_add(file);
+	alloc->type = ALLOC_CALLOC;
 
-    allocs.mlstat.ml_total += size;
-    allocs.mlstat.ml_callocs++;
-    return ptr;
+	allocs.mlstat.ml_total += size;
+	allocs.mlstat.ml_callocs++;
+	return ptr;
 }
 
 void *mleak_realloc(void *ptr, size_t size, char *file, int line,
-        const char *func)
+		const char *func)
 {
-    struct allocation *alloc, *previous_alloc;
-    void *new_ptr;
+	struct allocation *alloc, *previous_alloc;
+	void *new_ptr;
 
-    if (!is_initialized)
-        initialize();
+	if (!is_initialized)
+		initialize();
 
-    if (!ptr)
-        return mleak_malloc(size, file, line, func);
+	if (!ptr)
+		return mleak_malloc(size, file, line, func);
 
-    previous_alloc = allocation_find_by_ptr(ptr);
-    if (!previous_alloc) {
-        fprintf(stderr, "\033[91mrealloc() called with unregistered pointer:"
-                "\033[0m\n");
-        print_source_code(file, line, ptr);
-        exit(1);
-    }
+	previous_alloc = allocation_find_by_ptr(ptr);
+	if (!previous_alloc) {
+		fprintf(stderr, "\033[91mrealloc() called with unregistered pointer:"
+				"\033[0m\n");
+		print_source_code(file, line, ptr);
+		exit(1);
+	}
 
-    new_ptr = sys_realloc(ptr, size);
+	new_ptr = sys_realloc(ptr, size);
 
-    if (new_ptr == ptr) {
-        /* If realloc() returns the same pointer as the old one, only the size
-           is changed so we can just update the previous allocation. */
-        if (size > previous_alloc->size)
-            allocs.mlstat.ml_total += size - previous_alloc->size;
+	if (new_ptr == ptr) {
+		/* If realloc() returns the same pointer as the old one, only the size
+		   is changed so we can just update the previous allocation. */
+		if (size > previous_alloc->size)
+			allocs.mlstat.ml_total += size - previous_alloc->size;
 
-        previous_alloc->size = size;
-        previous_alloc->line = line;
-        previous_alloc->func = strings_add(func);
-        previous_alloc->file = strings_add(file);
-        previous_alloc->type = ALLOC_REALLOC;
-        return new_ptr;
-    }
+		previous_alloc->size = size;
+		previous_alloc->line = line;
+		previous_alloc->func = strings_add(func);
+		previous_alloc->file = strings_add(file);
+		previous_alloc->type = ALLOC_REALLOC;
+		return new_ptr;
+	}
 
-    /* If we get here, it means that realloc() returned a brand new pointer, so
-       we have to mark the previous allocation as ALLOC_FREE. */
-    previous_alloc->type = ALLOC_FREE;
+	/* If we get here, it means that realloc() returned a brand new pointer, so
+	   we have to mark the previous allocation as ALLOC_FREE. */
+	previous_alloc->type = ALLOC_FREE;
 
-    alloc = allocation_new();
-    alloc->ptr = new_ptr;
-    alloc->size = size;
-    alloc->line = line;
-    alloc->func = strings_add(func);
-    alloc->file = strings_add(file);
-    alloc->type = ALLOC_REALLOC;
+	alloc = allocation_new();
+	alloc->ptr = new_ptr;
+	alloc->size = size;
+	alloc->line = line;
+	alloc->func = strings_add(func);
+	alloc->file = strings_add(file);
+	alloc->type = ALLOC_REALLOC;
 
-    allocs.mlstat.ml_reallocs++;
-    allocs.mlstat.ml_total += size;
-    return new_ptr;
+	allocs.mlstat.ml_reallocs++;
+	allocs.mlstat.ml_total += size;
+	return new_ptr;
 }
 
 char *mleak_strdup(const char *str, char *file, int line, const char *func)
 {
-    struct allocation *alloc;
-    char *new_str;
-    size_t size;
+	struct allocation *alloc;
+	char *new_str;
+	size_t size;
 
-    if (!is_initialized)
-        initialize();
+	if (!is_initialized)
+		initialize();
 
-    new_str = sys_strdup(str);
-    size = strlen(new_str) + 1;
+	new_str = sys_strdup(str);
+	size = strlen(new_str) + 1;
 
-    alloc = allocation_new();
-    alloc->ptr = new_str;
-    alloc->size = size;
-    alloc->line = line;
-    alloc->func = strings_add(func);
-    alloc->file = strings_add(file);
-    alloc->type = ALLOC_STRDUP;
+	alloc = allocation_new();
+	alloc->ptr = new_str;
+	alloc->size = size;
+	alloc->line = line;
+	alloc->func = strings_add(func);
+	alloc->file = strings_add(file);
+	alloc->type = ALLOC_STRDUP;
 
-    allocs.mlstat.ml_total += size;
-    allocs.mlstat.ml_strdups++;
-    return new_str;
+	allocs.mlstat.ml_total += size;
+	allocs.mlstat.ml_strdups++;
+	return new_str;
 }
 
 void mleak_unchecked_free(void *ptr)
 {
-    if (!is_initialized)
-        initialize();
-    sys_free(ptr);
+	if (!is_initialized)
+		initialize();
+	sys_free(ptr);
 }
 
 void mleak_getstat(struct mleak_stat *mlstat)
 {
-    memcpy(mlstat, &allocs.mlstat, sizeof(*mlstat));
+	memcpy(mlstat, &allocs.mlstat, sizeof(*mlstat));
 }
 
 void mleak_printstat(struct mleak_stat *mlstat)
 {
-    printf("mleak: allocated %zu bytes\n", mlstat->ml_total);
-    printf("mleak: mallocs=%zu callocs=%zu reallocs=%zu frees=%zu strdups=%zu"
-            "\n", mlstat->ml_mallocs, mlstat->ml_callocs, mlstat->ml_reallocs,
-            mlstat->ml_frees, mlstat->ml_strdups);
+	printf("mleak: allocated %zu bytes\n", mlstat->ml_total);
+	printf("mleak: mallocs=%zu callocs=%zu reallocs=%zu frees=%zu strdups=%zu"
+			"\n", mlstat->ml_mallocs, mlstat->ml_callocs, mlstat->ml_reallocs,
+			mlstat->ml_frees, mlstat->ml_strdups);
 }
 
 /* Private functions */
@@ -257,127 +257,127 @@ void mleak_printstat(struct mleak_stat *mlstat)
 /* Add a new string into the strings list. Returns a pointer to string. */
 static char *strings_add(const char *str)
 {
-    pthread_mutex_lock(&mut_strings);
+	pthread_mutex_lock(&mut_strings);
 
-    /* If the string already exists in the string list, return a pointer to the
-       already allocated string. */
-    for (size_t i = 0; i < strings.size; i++) {
-        if (!strcmp(strings.strings[i], str)) {
-            pthread_mutex_unlock(&mut_strings);
-            return strings.strings[i];
-        }
-    }
+	/* If the string already exists in the string list, return a pointer to the
+	   already allocated string. */
+	for (size_t i = 0; i < strings.size; i++) {
+		if (!strcmp(strings.strings[i], str)) {
+			pthread_mutex_unlock(&mut_strings);
+			return strings.strings[i];
+		}
+	}
 
-    if (strings.size >= strings.space) {
-        strings.space += 64;
-        strings.strings = sys_realloc(strings.strings, strings.space
-                * sizeof(char *));
-    }
+	if (strings.size >= strings.space) {
+		strings.space += 64;
+		strings.strings = sys_realloc(strings.strings, strings.space
+				* sizeof(char *));
+	}
 
-    strings.strings[strings.size++] = sys_strdup(str);
+	strings.strings[strings.size++] = sys_strdup(str);
 
-    pthread_mutex_unlock(&mut_strings);
-    return strings.strings[strings.size - 1];
+	pthread_mutex_unlock(&mut_strings);
+	return strings.strings[strings.size - 1];
 }
 
 /* Create a new allocation slot. */
 static struct allocation *allocation_new()
 {
-    pthread_mutex_lock(&mut_allocs);
+	pthread_mutex_lock(&mut_allocs);
 
-    if (allocs.size >= allocs.space) {
-        allocs.space += 64;
-        allocs.allocs = sys_realloc(allocs.allocs, allocs.space
-                * sizeof(struct allocation *));
-    }
+	if (allocs.size >= allocs.space) {
+		allocs.space += 64;
+		allocs.allocs = sys_realloc(allocs.allocs, allocs.space
+				* sizeof(struct allocation *));
+	}
 
-    allocs.allocs[allocs.size++] = sys_calloc(sizeof(struct allocation), 1);
-    pthread_mutex_unlock(&mut_allocs);
-    return allocs.allocs[allocs.size - 1];
+	allocs.allocs[allocs.size++] = sys_calloc(sizeof(struct allocation), 1);
+	pthread_mutex_unlock(&mut_allocs);
+	return allocs.allocs[allocs.size - 1];
 }
 
 static struct allocation *allocation_find_by_ptr(void *ptr)
 {
-    if (!allocs.size)
-        return NULL;
+	if (!allocs.size)
+		return NULL;
 
-    size_t i = allocs.size;
-    while (i--) {
-        if (allocs.allocs[i]->ptr == ptr)
-            return allocs.allocs[i];
-    }
+	size_t i = allocs.size;
+	while (i--) {
+		if (allocs.allocs[i]->ptr == ptr)
+			return allocs.allocs[i];
+	}
 
-    return NULL;
+	return NULL;
 }
 
 /* Notify the user about the memory leak, printing all information stored in the
    allocation struct. */
 static void notify_about_leak(struct allocation *alloc)
 {
-    fprintf(stderr, "\033[91mMemory leaked, \033[1;91m%zu bytes\033[0m "
-            "allocated in \033[1;97m%s:\033[0m\n", alloc->size, alloc->func);
+	fprintf(stderr, "\033[91mMemory leaked, \033[1;91m%zu bytes\033[0m "
+			"allocated in \033[1;97m%s:\033[0m\n", alloc->size, alloc->func);
 
-    print_source_code(alloc->file, alloc->line, alloc->ptr);
+	print_source_code(alloc->file, alloc->line, alloc->ptr);
 }
 
 /* If we find the given file, we may use it to print the source code. */
 static void print_source_code(char *file, int linenum, void *ptr)
 {
-    char line[LINESIZE];
-    FILE *f;
+	char line[LINESIZE];
+	FILE *f;
 
-    if (!(f = fopen(file, "r")))
-        return;
+	if (!(f = fopen(file, "r")))
+		return;
 
-    /* Fetch until the start line. */
-    for (int i = 0; i < linenum - 2; i++)
-        fgets(line, LINESIZE, f);
+	/* Fetch until the start line. */
+	for (int i = 0; i < linenum - 2; i++)
+		fgets(line, LINESIZE, f);
 
-    fgets(line, LINESIZE, f);
-    fprintf(stderr, "%s\n%4d | %s", file, linenum - 1, line);
+	fgets(line, LINESIZE, f);
+	fprintf(stderr, "%s\n%4d | %s", file, linenum - 1, line);
 
-    fgets(line, LINESIZE, f);
-    line[strlen(line) - 1] = 0;
-    fprintf(stderr, "\033[96m%4d | %s\033[90m // => %p\033[0m\n", linenum, line,
-            ptr);
+	fgets(line, LINESIZE, f);
+	line[strlen(line) - 1] = 0;
+	fprintf(stderr, "\033[96m%4d | %s\033[90m // => %p\033[0m\n", linenum, line,
+			ptr);
 
-    fgets(line, LINESIZE, f);
-    fprintf(stderr, "%4d | %s\n", linenum + 1, line);
+	fgets(line, LINESIZE, f);
+	fprintf(stderr, "%4d | %s\n", linenum + 1, line);
 
-    fclose(f);
+	fclose(f);
 }
 
 /* Because we can't use the "malloc", ... names for the function calls, we need
    to load them ourselfs from libc. */
 static void initialize()
 {
-    sys_free    = dlsym(NULL, "free");
-    sys_malloc  = dlsym(NULL, "malloc");
-    sys_calloc  = dlsym(NULL, "calloc");
-    sys_realloc = dlsym(NULL, "realloc");
-    sys_strdup  = dlsym(NULL, "strdup");
+	sys_free    = dlsym(NULL, "free");
+	sys_malloc  = dlsym(NULL, "malloc");
+	sys_calloc  = dlsym(NULL, "calloc");
+	sys_realloc = dlsym(NULL, "realloc");
+	sys_strdup  = dlsym(NULL, "strdup");
 
-    if (!sys_free || !sys_malloc || !sys_calloc || !sys_realloc
-        || !sys_strdup) {
-        fprintf(stderr, "mleak: %s\n", dlerror());
-        exit(1);
-    }
+	if (!sys_free || !sys_malloc || !sys_calloc || !sys_realloc
+		|| !sys_strdup) {
+		fprintf(stderr, "mleak: %s\n", dlerror());
+		exit(1);
+	}
 
-    atexit(deconstruct);
-    is_initialized = true;
+	atexit(deconstruct);
+	is_initialized = true;
 }
 
 /* Free all allocated memory by this library, and summarize all allocations. */
 static void deconstruct()
 {
-    for (size_t i = 0; i < allocs.size; i++) {
-        if (allocs.allocs[i]->type != ALLOC_FREE)
-            notify_about_leak(allocs.allocs[i]);
-        sys_free(allocs.allocs[i]);
-    }
-    sys_free(allocs.allocs);
+	for (size_t i = 0; i < allocs.size; i++) {
+		if (allocs.allocs[i]->type != ALLOC_FREE)
+			notify_about_leak(allocs.allocs[i]);
+		sys_free(allocs.allocs[i]);
+	}
+	sys_free(allocs.allocs);
 
-    for (size_t i = 0; i < strings.size; i++)
-        sys_free(strings.strings[i]);
-    sys_free(strings.strings);
+	for (size_t i = 0; i < strings.size; i++)
+		sys_free(strings.strings[i]);
+	sys_free(strings.strings);
 }

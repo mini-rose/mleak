@@ -22,9 +22,9 @@
 void mleak_free(void *ptr, char *file, int line);
 void *mleak_malloc(size_t size, char *file, int line, const char *func);
 void *mleak_calloc(size_t size, size_t elems, char *file, int line,
-        const char *func);
+		const char *func);
 void *mleak_realloc(void *ptr, size_t size, char *file, int line,
-        const char *func);
+		const char *func);
 
 #if _XOPEN_SOURCE >= 500
 /* Duplicate a string */
@@ -45,12 +45,12 @@ void mleak_unchecked_free(void *ptr);
    to malloc(). */
 struct mleak_stat
 {
-    size_t ml_total;
-    size_t ml_frees;
-    size_t ml_mallocs;
-    size_t ml_callocs;
-    size_t ml_reallocs;
-    size_t ml_strdups;
+	size_t ml_total;
+	size_t ml_frees;
+	size_t ml_mallocs;
+	size_t ml_callocs;
+	size_t ml_reallocs;
+	size_t ml_strdups;
 };
 
 /* Get the current statistics from the library. This will copy the data into
@@ -68,7 +68,7 @@ void mleak_printstat(struct mleak_stat *mlstat);
 #define malloc(SIZE) mleak_malloc(SIZE, __FILE__, __LINE__, MLEAK_FUNC)
 #define calloc(SIZE, N) mleak_calloc(SIZE, N, __FILE__, __LINE__, MLEAK_FUNC)
 #define realloc(PTR, SIZE) mleak_realloc(PTR, SIZE, __FILE__, __LINE__, \
-        MLEAK_FUNC)
+		MLEAK_FUNC)
 #define unchecked_free(PTR) mleak_unchecked_free(PTR)
 
 #if _XOPEN_SOURCE >= 500
