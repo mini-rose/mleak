@@ -87,18 +87,18 @@ void mleak_free(void *ptr, char *file, int line)
 
 	alloc = allocation_find_by_ptr(ptr);
 	if (!alloc) {
-		fprintf(stderr, "\033[91mfree() called with unregistered pointer:"
-				"\033[0m\n");
+		fputs("\033[91mfree() called with unregistered pointer:"
+				"\033[0m\n", stderr);
 		print_source_code(file, line, ptr);
 		exit(1);
 	}
 
 	if (alloc->type == ALLOC_FREE) {
-		fprintf(stderr, "\033[91mfree() called with already free'd pointer:"
-				"\033[0m\n");
+		fputs("\033[91mfree() called with already free'd pointer:"
+				"\033[0m\n", stderr);
 		print_source_code(file, line, ptr);
 
-		fprintf(stderr, "Previously free'd here:\n");
+		fputs("Previously free'd here:\n", stderr);
 		print_source_code(alloc->file, alloc->line, alloc->ptr);
 
 		exit(1);
@@ -168,8 +168,8 @@ void *mleak_realloc(void *ptr, size_t size, char *file, int line,
 
 	previous_alloc = allocation_find_by_ptr(ptr);
 	if (!previous_alloc) {
-		fprintf(stderr, "\033[91mrealloc() called with unregistered pointer:"
-				"\033[0m\n");
+		fputs("\033[91mrealloc() called with unregistered pointer:"
+				"\033[0m\n", stderr);
 		print_source_code(file, line, ptr);
 		exit(1);
 	}
