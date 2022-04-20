@@ -16,11 +16,14 @@ typedef void *(*calloc_ft) (size_t, size_t);
 typedef void *(*realloc_ft) (void *, size_t);
 typedef char *(*strdup_ft) (const char *);
 
-#define ALLOC_FREE      1
-#define ALLOC_MALLOC    2
-#define ALLOC_CALLOC    3
-#define ALLOC_REALLOC   4
-#define ALLOC_STRDUP    5
+enum alloc_type
+{
+	ALLOC_FREE = 1,
+	ALLOC_MALLOC,
+	ALLOC_CALLOC,
+	ALLOC_REALLOC,
+	ALLOC_STRDUP
+};
 
 #define LINESIZE        256
 
