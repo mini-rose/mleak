@@ -1,45 +1,53 @@
-mleak
------
+BADGES
+	LINES: 603 | SIZE: 28K
 
-Library for catching memory leaks, double-frees, invalid pointers passed to free
-& realloc, counting allocations and used heap memory. Install the library by
-running ./install as root, and then include the <mleak.h> header in your source
-code. Then add the following line to your buildfile:
+NAME
+	mleak - Library for catching memory leaks, double-frees
+	        along with invalid pointers to free() and realloc().
 
-    libs mleak
+DESCRIPTION
+	This library is not designed to be a replacement for
+	the address sanitizer nor Valgrind, or any similar tools.
+	The goal is to provide a very simple to use interface for
+	users who prefer using lightweight tools.
 
+	The main selling point is the simple to understand error
+	messages, which automatically show where this problem happened.
+	For example, leaking memory will show you where it was allocated
+	and a pointer for reference, like seen below.
 
-This library is not designed to be a replacement for the address sanitizer
-nor Valgrind, or any similar tools. The goal is to provide a very simple to
-use interface for users who prefer using lightweight tools.
+USAGE
+	We only need to include <mleak.h> header and link with -lmleak
+	to our program. Example:
 
-The main selling point is the simple to understand error messages, which
-automatically show where this problem happened. For example, leaking memory
-will show you where it was allocated and a pointer for reference, like seen
-below.
+	test.c source code:
 
+	#include <mleak.h>
 
-Example
--------
+	int main()
+	{
+		void *p = malloc(24);
+	}
 
-    #include <mleak.h>
+	Could output:
 
-    int main()
-    {
-        void *p = malloc(24);
-    }
+	Memory leaked, 24 bytes allocated in int main():
+	test.c
+	    4 | {
+	    5 |     void *p = malloc(24); // => 0x603000000040
+	    6 | }
 
+	If you called free() with a pointer from strdup or any other
+	function that allocates memory and is not compiled with mleak,
+	you will get an error about an unrecognized pointer. In order to
+	disable this you may use unchecked_free() instead of the regular
+	free().
 
-Could output:
-
-    Memory leaked, 24 bytes allocated in int main():
-    test.c
-       4 | {
-       5 |     void *p = malloc(24); // => 0x603000000040
-       6 | }
-
-
-If you called free() with a pointer from strdup or any other function that
-allocates memory and is not compiled with mleak, you will get an error about
-an unrecognized pointer. In order to disable this you may use unchecked_free()
-instead of the regular free().
+LICENSE
+	mleak is released under the MIT license,
+	which grants the following permissions:
+	 - commercial use,
+	 - distibution,
+	 - modification,
+	 - private usage.
+	For more information see the license file.
